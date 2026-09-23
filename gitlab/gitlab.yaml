@@ -1,0 +1,60 @@
+services:
+  gitlab:
+    image: gitlab/gitlab-ce:latest
+    container_name: gitlab
+    restart: unless-stopped
+    ports:
+      - "8180:80"      # Web UI по http://<host>:8180
+      - "8443:443"     # HTTPS (если позже настроишь SSL)
+      - "8222:22"      # SSH для git
+      - "8150:8150"
+    shm_size: "2g"
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+    volumes:
+      - gitlab_config:/etc/gitlab
+      - gitlab_logs:/var/log/gitlab
+      - gitlab_data:/var/opt/gitlab
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url '${PUBLIC_BASE_URL}/gitlab'
+        gitlab_rails['gitlab_shell_ssh_port'] = 8222
+        nginx['listen_port'] = 80
+        nginx['listen_addresses'] = ['0.0.0.0', '[::]']
+        gitlab_rails['initial_root_password'] = '${GITLAB_INITIAL_ROOT_PASSWORD}'
+        gitlab_rails['gitlab_email_from'] = 'name@example.com'
+        gitlab_rails['gitlab_email_display_name'] = 'name'
+        gitlab_rails['ci_builds_expire_in'] = '7 days'
+        gitlab_rails['ci_max_job_log_size'] = 100
+        logging['logrotate_frequency'] = "daily"
+        logging['logrotate_rotate'] = 30
+        logging['logrotate_compress'] = "compress"
+        logging['logrotate_method'] = "copytruncate"
+        logging['logrotate_delaycompress'] = "delaycompress"
+
+  gitlab-runner:
+    image: gitlab/gitlab-runner:latest
+    container_name: gitlab-runner
+    restart: unless-stopped
+    privileged: true
+    depends_on:
+      - gitlab
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - gitlab_runner_config:/etc/gitlab-runner
+      - ${HOME_MOUNT:-/home/user}:${HOME_MOUNT:-/home/user}
+volumes:
+  gitlab_config:
+  gitlab_logs:
+  gitlab_data:
+  gitlab_runner_config:

@@ -1,0 +1,27 @@
+version: '3.3'
+
+services:
+  rancher:
+#    image: rancher/rancher:latest
+    image: rancher/rancher:v2.14.2
+    container_name: rancher
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - "880:80"
+      - "8443:443"
+    environment:
+      # Bootstrap password for admin
+      - CATTLE_BOOTSTRAP_PASSWORD=${CATTLE_BOOTSTRAP_PASSWORD:-admin}
+    volumes:
+#      - rancher-data:/var/lib/rancher
+      - rancher-clean-data:/var/lib/rancher
+    mem_limit: 1536M
+    cpus: 1.5
+
+volumes:
+#  rancher-data:
+  rancher-clean-data:
+    external: true
+#    name: rancher_rancher-data
+    name: rancher-clean-data

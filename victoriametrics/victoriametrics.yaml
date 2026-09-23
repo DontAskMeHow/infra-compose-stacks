@@ -1,0 +1,18 @@
+services:
+  victoriametrics:
+    image: victoriametrics/victoria-metrics:latest
+    restart: unless-stopped
+    ports:
+      - "8428:8428"
+    volumes:
+      - /opt/victoria-metrics/scrape.yml:/etc/victoriametrics/scrape.yml:ro
+      - /opt/victoria-metrics/data:/storage
+    command:
+      - "--storageDataPath=/storage"
+      - "--retentionPeriod=6"
+      - "--httpListenAddr=:8428"
+      - "--httpAuth.username=${VM_HTTPAUTH_USER:-vmuser}"
+      - "--httpAuth.password=${VM_HTTPAUTH_PASSWORD}"
+      - "--promscrape.config=/etc/victoriametrics/scrape.yml"
+      - "-http.pathPrefix=/victoriametrics"
+      - "--search.maxQueryLen=64KB"

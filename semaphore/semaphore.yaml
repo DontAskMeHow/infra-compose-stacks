@@ -1,0 +1,43 @@
+services:
+    semafore:
+        ports:
+            - 3030:3000
+        image: semaphoreui/semaphore:v2.12.3
+        restart: always
+        environment:
+            SEMAPHORE_DB_DIALECT: postgres
+            SEMAPHORE_DB_HOST: db
+            SEMAPHORE_DB_PORT: 5432
+            SEMAPHORE_DB_NAME: semaphore
+            SEMAPHORE_DB_USER: semaphore
+            SEMAPHORE_DB_PASS: ${SEMAPHORE_DB_PASS}
+            SEMAPHORE_ADMIN: admin
+            SEMAPHORE_ADMIN_PASSWORD: ${SEMAPHORE_ADMIN_PASSWORD}
+            SEMAPHORE_ADMIN_NAME: Admin
+            SEMAPHORE_ADMIN_EMAIL: ${SEMAPHORE_ADMIN_EMAIL:-admin@example.com}
+            ANSIBLE_HOST_KEY_CHECKING: False
+
+            SEMAPHORE_WEB_ROOT: "${PUBLIC_BASE_URL}/semaphore"
+        depends_on:
+            - db
+        volumes:
+            - semaphore_data:/var/lib/semaphore
+            - semaphore_config:/etc/semaphore
+            - semaphore_tmp:/tmp/semaphore
+            - ${SSH_KEYS_DIR:-/home/user/.ssh}:/tmp/semaphore/.ssh:ro
+
+    db:
+        image: postgres:15
+        restart: always
+        environment:
+            POSTGRES_DB: semaphore
+            POSTGRES_USER: semaphore
+            POSTGRES_PASSWORD: ${SEMAPHORE_DB_PASS}
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+
+volumes:
+    semaphore_data:
+    semaphore_config:
+    semaphore_tmp:
+    postgres_data:
